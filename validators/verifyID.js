@@ -7,4 +7,4 @@ const verifyID = {
     }
 }
 
-module.exports = verifyID;
+module.exports = {verifyID};
