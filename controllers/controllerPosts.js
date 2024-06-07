@@ -3,10 +3,26 @@ const prisma = new PrismaClient();
 
 const create = async (req, res, next) => {
     try{
-        const data = req.body;
+        // prendiamo i dati necessari per la creazione del post
+        const { title, slug, image, content, published, categoryID, tags} = req.body;
+        // definiamo la struttura di data e il collegamento con i tags
+        const data = {
+            title,
+            slug,
+            image,
+            content,
+            published,
+            categoryID,
+            tags : {
+                connect: tags.map(tagId => ({ id: tagId }))
+            }
+        }
+        //stilizziamo lo slug
         data.slug = data.slug.toLowerCase();
+
         const newPost = await prisma.Post.create({data})
         res.status(200).send(newPost);
+
     } catch (e) {
         next(e);
     }
@@ -16,7 +32,15 @@ const show = async (req, res, next) => {
     try {
         const searchedSlug = req.params.slug;
         const post = await prisma.Post.findUnique({
-            where: { slug: searchedSlug }
+            where: { slug: searchedSlug },
+            include: {
+                category: {
+                    title: true
+                },
+                tags: {
+                    title: true
+                }
+            }
         });
         if (post) {
             res.status(200).json(post);
@@ -67,9 +91,20 @@ const index = async (req, res, next) => {
                     contains: content
                 }
             },
+            include: {
+                category: {
+                    select: {
+                        title: true
+                    }
+                },
+                tags: {
+                    select: {
+                    title: true
+                    }
+                },
             take: parseInt(postPerPage),
             skip: offset
-        });
+            }});
         res.status(200).send({posts: posts, page: `${page} di ${totalPages}`, totalPosts: totalPosts});
     } catch(e) {
         next(e);
@@ -78,18 +113,23 @@ const index = async (req, res, next) => {
 
 const update = async (req, res, next) => {
     try{
-        const data = req.body
-        console.log(data);
-        if (!req.params.slug){
-            res.status(400).send({ error: "Slug is required" });
+        const { title, slug, image, content, published, categoryID } = req.body;
+        const tags = req.body.tags;
+
+        // definiamo la struttura di data e il collegamento con i tags
+        const data = {
+            title,
+            slug,
+            image,
+            content,
+            published,
+            categoryID,
+            tags: {
+                set: tags.map(tagId => ({ id: tagId }))
+            }
         }
-        if (data.slug){
-            data.slug = data.slug.toLowerCase();
-        }
-        const checkExist = await prisma.Post.findUnique({ where: { slug: req.params.slug } });
-        if (!checkExist) {
-            res.status(404).send({ error: "Post not found, can't update" });
-        }
+        //stilizziamo lo slug
+        data.slug = data.slug.toLowerCase();
         const updatedPost = await prisma.Post.update({
             where: { slug: req.params.slug },
             data: data

@@ -1,4 +1,5 @@
-const { default: isBoolean } = require("validator/lib/isBoolean");
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
 
 const verifyRequest = {
     title: {
@@ -68,18 +69,16 @@ const verifyRequest = {
     },
     categoryID: {
         in: ["body"],
-        notEmpty: {
-            errorMessage: "Inserisci l'id della categoria",
-            bail: true
-        },
         isInt: {
             errorMessage: "L'id della categoria deve essere un intero",
             bail: true
         },
         custom: {
             options: async (catId) => {
-                const categoryID = parseInt(catId);
-                const category = await Category.findByPk(categoryID);
+                const searchID = parseInt(catId);
+                const category = await prisma.Category.findUnique({
+                    where: {id: searchID}
+                });
                 if (!category) {
                     throw new Error("La categoria non esiste");
                 }
@@ -99,26 +98,32 @@ const verifyRequest = {
         },
         custom: {
             options: async (tags) => {
-                if(tags.length === 0){
-                    throw new Error(`Inserisci almeno un tag`);
-                }
-                const checkId = tags.find(tagID => isNaN(parseInt(tagID)));
+                try{
 
-                if(checkId){
-                    throw new Error(`Verifica che tutti i tag siano numeri interi`);
-                }
-
-                const linkedTags = await prisma.Tag.findMany({
-                    where: {
-                        id: {
-                            in: tags
-                        }
+                    console.log(tags);
+                    if(tags.length === 0){
+                        throw new Error(`Inserisci almeno un tag`);
                     }
-                });
-                if (linkedTags.length!== tags.length) {
-                    throw new Error("Almeno un tag inserito non esiste");
+                    const checkId = tags.find(tagID => isNaN(parseInt(tagID)));
+        
+                    if(checkId){
+                        throw new Error(`Verifica che tutti i tag siano numeri interi`);
+                    }
+    
+                    const linkedTags = await prisma.tag.findMany({
+                        where: {
+                            id: {
+                                in: tags
+                            }
+                        }
+                    })
+                    if (linkedTags.length !== tags.length) {
+                        throw new Error("Almeno un tag inserito non esiste");
+                    }
+                    return true;
+                } catch (e) {
+                    throw e;
                 }
-                return true;
             }
     
         }
