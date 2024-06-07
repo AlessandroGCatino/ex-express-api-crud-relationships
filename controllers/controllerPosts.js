@@ -35,11 +35,15 @@ const show = async (req, res, next) => {
             where: { slug: searchedSlug },
             include: {
                 category: {
-                    title: true
+                    select: {
+                        title: true
+                    }
                 },
                 tags: {
+                    select: {
                     title: true
-                }
+                    }
+                },
             }
         });
         if (post) {
@@ -102,9 +106,10 @@ const index = async (req, res, next) => {
                     title: true
                     }
                 },
+            },
             take: parseInt(postPerPage),
             skip: offset
-            }});
+        });
         res.status(200).send({posts: posts, page: `${page} di ${totalPages}`, totalPosts: totalPosts});
     } catch(e) {
         next(e);
