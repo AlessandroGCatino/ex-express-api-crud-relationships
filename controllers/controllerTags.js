@@ -4,8 +4,8 @@ const prisma = new PrismaClient();
 const create = async (req, res, next) => {
     try{
         const {title} = req.body;
-        const tagTitle = title
-        const newTag = await prisma.Tag.create({tagTitle})
+        const data = {title}
+        const newTag = await prisma.Tag.create({data})
         res.status(200).send(newTag);
     } catch (e) {
         next(e);
@@ -16,7 +16,7 @@ const show = async (req, res, next) => {
     try {
         const searchedID = req.params.id;
         const tag = await prisma.Tag.findUnique({
-            where: { id: searchedID }
+            where: { id: parseInt(searchedID) }
         });
         if (tag) {
             res.status(200).json(tag);
@@ -40,15 +40,19 @@ const index = async (req, res, next) => {
 const update = async (req, res, next) => {
     try{
         const {title} = req.body
-        const newTitle = title
+        const data = {title}
 
         const updatedTag = await prisma.Tag.update({
-            where: { id: req.params.id },
-            data: newTitle
+            where: { id: parseInt(req.params.id) },
+            data: data
         })
+        if (updatedTag) {
         res.status(200).send({
             message: `Campo title modificato`,
             tag: updatedTag});
+        } else {
+            res.status(404).send({ error: "Tag non trovato" });
+        }
     } catch (e) {
         next(e);
     }
@@ -58,10 +62,10 @@ const update = async (req, res, next) => {
 const destroy = async (req, res, next) => {
     try{
         const deletedTag = await prisma.Tag.delete({
-            where: { id: req.params.id }
+            where: { id: parseInt(req.params.id) }
         });
         res.status(200).send({
-            message: `Il Tag "${deletedTag.id}" è stato eliminato`,
+            message: `Il Tag ${deletedTag.id} è stato eliminato`,
         });
     } catch (e) {
         next(e);
