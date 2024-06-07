@@ -1,15 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const { create, show, index, update, destroy } = require('../controllers/controllerPosts.js')
-const missingPage = require('../middlewares/missingPage.js');
+const validator = require('../middlewares/validator.js');
+const { verifySlug } = require('../validators/verifySlug.js');
+const { verifyRequest } = require('../validators/verifyPosts.js');
 
-router.post('/', create);
-
-router.get('/:slug', show);
+router.post('/', validator(verifyRequest), create);
 
 router.get('/', index);
 
-router.put('/:slug', update);
+
+router.use('/:slug', validator(verifySlug))
+// il check sullo Slug viene effettuato su tutte le route successive
+
+
+router.get('/:slug', show);
+
+router.put('/:slug', validator(verifyRequest), update);
 
 router.delete('/:slug', destroy);
 
